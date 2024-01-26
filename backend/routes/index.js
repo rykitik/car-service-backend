@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
-const { createUser, createAppointment, getAvailableServices } = require('../controllers');
+const { createAppointment } = require('../controllers/appointmentController');
+const { createUser } = require('../controllers/userController');
+const { getAvailableServices } = require('../controllers/serviceController');
 
 // Роуты для работы с пользователями
 router.post('/user', createUser);

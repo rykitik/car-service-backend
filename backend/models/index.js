@@ -1,24 +1,63 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { Sequelize } = require('sequelize');
+const dotenv = require('dotenv');
 
-const sequelize = new Sequelize({
+// Загрузите параметры подключения из файла .env
+dotenv.config();
+
+const {
+  DB_NAME,
+  DB_USER,
+  DB_PASSWORD,
+  DB_HOST,
+  DB_PORT,
+  DB_DATABASE
+} = process.env;
+
+const sequelize = new Sequelize(DB_DATABASE, DB_USER, DB_PASSWORD, {
+  host: DB_HOST,
+  port: DB_PORT,
   dialect: 'postgres',
-  host: 'localhost',
-  username: 'your_username',
-  password: 'your_password',
-  database: 'autoservice_db',
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false // <<<<<<< YOU NEED THIS
+    }
+  },
+  define: {
+    timestamps: false,
+  },
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  }
 });
 
-const User = require('./User')(sequelize, DataTypes);
-const Appointment = require('./Appointment')(sequelize, DataTypes);
-const Service = require('./Service')(sequelize, DataTypes);
+sequelize
+  .authenticate()
+  .then(() => {
+    console.log('Connection has been established successfully.');
+  })
+  .catch(err => {
+    console.error('Unable to connect to the database:', err);
+  });
 
-User.hasMany(Appointment);
-Appointment.belongsTo(User);
-
-sequelize.sync({ force: true }); // Опционально, для сброса базы данных при каждом запуске
-
-// Создание индексов для оптимизации запросов
-User.sync({ indexes: [{ unique: true, fields: ['email'] }] });
-Appointment.sync({ indexes: [{ fields: ['userId', 'serviceId'] }] });
+  const User = require('./User')(sequelize);
+  const Appointment = require('./Appointment')(sequelize);
+  const Service = require('./Service')(sequelize);
+  
+  // Создание таблицы "Users"
+  User.sync({ indexes: [{ unique: true, fields: ['email'] }] })
+    .then(() => {
+      // Создание таблицы "Appointments" после успешного создания "Users"
+      return Appointment.sync({ indexes: [{ fields: ['userId', 'serviceId'] }] });
+    })
+    .then(() => {
+      console.log('Tables created successfully.');
+    })
+    .catch(err => {
+      console.error('Error creating tables:', err);
+    });
 
 module.exports = sequelize;

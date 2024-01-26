@@ -3,9 +3,9 @@ const authMiddleware = (req, res, next) => {
     // Пример: проверка наличия токена в заголовке запроса
     const token = req.header('Authorization');
   
-    if (!token) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+    // if (!token) {
+    //   return res.status(401).json({ error: 'Unauthorized' });
+    // }
   
     // Расшифровка токена и проверка авторизации
   
